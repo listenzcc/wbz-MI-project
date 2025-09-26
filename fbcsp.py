@@ -37,8 +37,10 @@ raw_directory = Path('./raw')
 cnt_files = sorted(list(raw_directory.rglob('*.cnt')))
 print(f'{cnt_files=}')
 
-output_directory = Path('./results/decoding')
+output_directory = Path('./results/decoding-customized-channels')
 output_directory.mkdir(exist_ok=True, parents=True)
+
+customized_ch_names = open('./results/ch_names.txt').read().split()
 
 # %% ---- 2025-09-25 ------------------------
 # Function and class
@@ -205,6 +207,7 @@ groups = np.concatenate([
 epochs = mne.concatenate_epochs([md.epochs for md in mds])
 event_ids = list(epochs.event_id.keys())
 epochs.load_data()
+epochs.pick(customized_ch_names)
 epochs
 
 # Generate X, y
@@ -225,7 +228,7 @@ results = evaluate_fbcsp_group_cv(X, y, groups, pipelines)
 # 绘制结果
 fig, results_df = plot_fbcsp_results(results)
 plt.tight_layout()
-plt.show()
+# plt.show()
 fig.savefig(output_directory.joinpath('scores-by-frequency-band.png'))
 
 joblib.dump(results, output_directory.joinpath('fbcsp-results.dump'))

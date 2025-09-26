@@ -36,6 +36,11 @@ output_directory.mkdir(exist_ok=True, parents=True)
 # Function and class
 
 
+def read_customized_ch_names():
+    raw_split = open('./mqt-channels.txt').read().split()
+    return [e.strip().upper() for e in raw_split if e.strip()]
+
+
 # %% ---- 2025-09-25 ------------------------
 # Play ground
 mds = []
@@ -49,10 +54,28 @@ raw_epochs.load_data()
 epochs = raw_epochs.copy().pick(['C3', 'CZ', 'C4'])
 event_ids = list(epochs.event_id.keys())
 
+# %%
+raw_ch_names = raw_epochs.ch_names
+customized_ch_names = read_customized_ch_names()
+joint_ch_names = sorted([e for e in customized_ch_names if e in raw_ch_names])
+na_ch_names = sorted(
+    [e for e in customized_ch_names if e not in joint_ch_names])
+print(f'{joint_ch_names=}')
+print(f'{na_ch_names=}')
+with open(output_directory.parent.joinpath('ch_names.txt'), 'w') as f:
+    f.write('\n'.join(joint_ch_names))
+
+
+# %%
 for evt in event_ids:
-    evoked = epochs['1'].average()
-    evoked.plot_joint()
+    evoked = raw_epochs[evt].average()
+    evoked.pick(joint_ch_names)
+    fig = evoked.plot_joint(
+        show=False, title=f'{evt=}', times=[0, 0.135, 0.470, 1, 2])
+    fig.savefig(output_directory.parent.joinpath(f'evoked-{evt=}.png'))
     plt.show()
+
+# %%
 
 freqs = np.arange(2, 36)  # frequencies from 2-35Hz
 vmin, vmax = -1, 1.5  # set min and max ERDS values in plot

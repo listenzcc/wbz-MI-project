@@ -53,7 +53,10 @@ class MyData:
 
     def read_raw(self):
         raw = mne.io.read_raw_cnt(self.fpath)
+
+        # Only use the ch_names inside the montage
         raw.pick([e for e in raw.ch_names if e in self.montage.ch_names])
+
         raw.set_montage(self.montage, on_missing='raise')
         return raw
 

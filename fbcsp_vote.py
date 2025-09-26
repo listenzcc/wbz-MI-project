@@ -25,9 +25,10 @@ from sklearn import metrics
 from util.easy_import import *
 
 # %%
-results = joblib.load('./results/decoding/fbcsp-results.dump')
+results = joblib.load(
+    './results/decoding-customized-channels/fbcsp-results.dump')
 
-output_directory = Path('./results/decoding')
+output_directory = Path('./results/decoding-customized-channels')
 output_directory.mkdir(exist_ok=True, parents=True)
 
 # %% ---- 2025-09-25 ------------------------
@@ -107,6 +108,7 @@ for k, v in results.items():
     print(v['mean_accuracy'])
     print(metrics.classification_report(
         y_true=v['y_true'], y_pred=v['y_pred']))
+    print(v['all_scores'])
 
     proba_stack.append(v['y_proba'])
 
@@ -126,6 +128,8 @@ plt.axhline(y=0.5, color='red', linestyle='--',
             linewidth=1, alpha=0.7, label='y=0.5')
 plt.axhline(y=report['accuracy'], color='red', linestyle='--',
             linewidth=1, alpha=0.7, label='vote')
+plt.text(x=5, y=report['accuracy'], s='Vote Acc: {:.3f}'.format(report['accuracy']),
+         ha='center', va='bottom', fontsize=12, fontweight='bold', fontdict={'color': 'red'})
 fig.tight_layout()
 fig.savefig(output_directory.joinpath(
     'scores-by-frequency-band-with-vote.png'))
