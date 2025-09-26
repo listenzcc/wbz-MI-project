@@ -36,7 +36,7 @@ print(f'{cnt_files=}')
 
 customized_ch_names = open('./results/ch_names.txt').read().split()
 
-output_directory = Path('./results/fbnet')
+output_directory = Path('./results/fbcnet')
 output_directory.mkdir(exist_ok=True, parents=True)
 
 # %%
@@ -155,42 +155,48 @@ for test_group in np.unique(groups):
     it = iter(dl.yield_train_data(batch_size=64))
 
     for epoch in tqdm(range(5000), desc='Epoch'):
-        X, y = next(it)
-        # print(f'{X.shape=}, {y.shape=}')
+        def _train():
+            X, y = next(it)
+            # print(f'{X.shape=}, {y.shape=}')
 
-        _y = model(torch.tensor(X, dtype=torch.float32))
-        # print(f'{_y.shape=}')
-        # print(_y)
+            _y = model(torch.tensor(X, dtype=torch.float32))
+            # print(f'{_y.shape=}')
+            # print(_y)
 
-        # 前向传播
-        loss = criterion(_y, torch.tensor(y-1))
-        # print(f'{loss.item()=}')
+            # 前向传播
+            loss = criterion(_y, torch.tensor(y-1))
+            # print(f'{loss.item()=}')
 
-        # 反向传播
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            # 反向传播
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        # Report
-        if epoch % 100 == 0:
-            logger.info(f'Epoch {epoch}, Loss: {loss.item():.6f}')
+            # Report
+            if epoch % 100 == 0:
+                logger.info(f'Epoch {epoch}, Loss: {loss.item():.6f}')
+
+        _train()
 
     # Testing loop
-    X, y = dl.get_test_data()
-    with torch.no_grad():
-        _y = model(torch.tensor(X, dtype=torch.float32))
-        predicted = torch.argmax(_y, dim=1).numpy() + 1
-        print(y)
-        print(predicted)
-        accuracy = np.mean(predicted == y)
-        logger.info(f'Test Accuracy ({test_group}): {accuracy * 100:.2f}%')
+    def _test():
+        X, y = dl.get_test_data()
+        with torch.no_grad():
+            _y = model(torch.tensor(X, dtype=torch.float32))
+            predicted = torch.argmax(_y, dim=1).numpy() + 1
+            print(y)
+            print(predicted)
+            accuracy = np.mean(predicted == y)
+            logger.info(f'Test Accuracy ({test_group}): {accuracy * 100:.2f}%')
 
-    result = {
-        'y_true': y,
-        'y_pred': predicted,
-        'test_group': test_group
-    }
-    save(result, output_directory.joinpath(f'result-{test_group}.dump'))
+        result = {
+            'y_true': y,
+            'y_pred': predicted,
+            'test_group': test_group
+        }
+        save(result, output_directory.joinpath(f'result-{test_group}.dump'))
+
+    _test()
 
 exit(0)
 # %% ---- 2025-09-26 ------------------------
