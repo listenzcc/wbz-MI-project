@@ -7,6 +7,8 @@ Copyright & Email: chuncheng.zhang@ia.ac.cn
 Purpose:
     Read raw data.
 
+    <https://mne.tools/stable/api/events.html#module-mne.epochs>
+
 Functions:
     1. Requirements and constants
     2. Function and class

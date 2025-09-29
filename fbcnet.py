@@ -101,6 +101,8 @@ epochs.load_data()
 epochs.pick(customized_ch_names)
 print(epochs)
 
+# %%
+
 # Generate X, y
 X = epochs.get_data(copy=False)
 y = epochs.events[:, -1]
