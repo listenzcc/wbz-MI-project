@@ -26,9 +26,9 @@ from util.easy_import import *
 
 # %%
 results = joblib.load(
-    './results/decoding-customized-channels/fbcsp-results.dump')
+    './results/decoding/fbcsp-results.dump')
 
-output_directory = Path('./results/decoding-customized-channels')
+output_directory = Path('./results/decoding')
 output_directory.mkdir(exist_ok=True, parents=True)
 
 # %% ---- 2025-09-25 ------------------------

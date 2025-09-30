@@ -39,30 +39,35 @@ from mne.decoding import (
 )
 
 from util.easy_import import *
-from read_data import MyData
+from read_data_link import MyData
 
 # %%
-raw_directory = Path('./raw')
-cnt_files = sorted(list(raw_directory.rglob('*.cnt')))
-print(f'{cnt_files=}')
+DATA_DIR = Path('./raw/20250929')
+OUTPUT_DIR = Path('./results/decoding')
+OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
-output_directory = Path('./results/decoding')
-output_directory.mkdir(exist_ok=True, parents=True)
+
+# %%
+cnt_files = sorted(list(DATA_DIR.rglob('*.cnt')))
+edf_files = sorted(list(DATA_DIR.rglob('*.edf')))
+file_pairs = [{'cnt': c, 'edf': e} for (c, e) in zip(cnt_files, edf_files)]
+
+# Load data
+mds = []
+for pair in tqdm(file_pairs, 'Load data'):
+    md = MyData(pair['cnt'])
+    md.link_to_edf(pair['edf'])
+    mds.append(md)
+
+groups = np.concatenate([
+    np.zeros((len(md.epochs), )) + i
+    for i, md in enumerate(mds)])
 
 # %% ---- 2025-09-25 ------------------------
 # Function and class
 
 
 # %% ---- 2025-09-25 ------------------------
-# Load data
-mds = []
-for p in tqdm(cnt_files, 'Load data'):
-    md = MyData(p)
-    mds.append(md)
-
-groups = np.concatenate([
-    np.zeros((len(md.epochs), )) + i
-    for i, md in enumerate(mds)])
 
 # Concat epochs
 epochs = mne.concatenate_epochs([md.epochs for md in mds])
@@ -110,7 +115,7 @@ plt.axhline(y=0.5, color='red', linestyle='--',
 plt.axvline(x=0.0, color='red', linestyle='--',
             linewidth=1, alpha=0.7, label='x=0.0')
 plt.title('Scores over Time with Standard Deviation')
-plt.savefig(output_directory.joinpath('scores-over-time.png'))
+plt.savefig(OUTPUT_DIR.joinpath('scores-over-time.png'))
 plt.show()
 
 # %% ---- 2025-09-25 ------------------------

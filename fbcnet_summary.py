@@ -25,8 +25,10 @@ from util.io.file import load
 
 
 # %%
-data_directory = Path('./results/fbcnet')
-dump_files = sorted(list(data_directory.rglob('*.dump')))
+DATA_DIR = Path('./results/fbcnet-gpu')
+
+# %%
+dump_files = sorted(list(DATA_DIR.rglob('*.dump')))
 
 # %% ---- 2025-09-26 ------------------------
 # Function and class
@@ -50,9 +52,9 @@ for obj in objs:
 y_true = np.array(y_true).ravel()
 y_pred = np.array(y_pred).ravel()
 
-print(metrics.classification_report(y_true=y_true, y_pred=y_pred))
 for report in reports:
     print(report['accuracy'])
+print(metrics.classification_report(y_true=y_true, y_pred=y_pred))
 
 
 # %% ---- 2025-09-26 ------------------------

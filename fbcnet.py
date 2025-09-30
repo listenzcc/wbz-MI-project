@@ -27,20 +27,32 @@ from torcheeg.models import FBCNet
 
 from util.easy_import import *
 from util.io.file import save
-from read_data import MyData
+from read_data_link import MyData
 
 # %%
-raw_directory = Path('./raw')
-cnt_files = sorted(list(raw_directory.rglob('*.cnt')))
-print(f'{cnt_files=}')
-
-customized_ch_names = open('./results/ch_names.txt').read().split()
-
-output_directory = Path('./results/fbcnet')
-output_directory.mkdir(exist_ok=True, parents=True)
+DATA_DIR = Path('./raw/20250929')
+OUTPUT_DIR = Path('./results/fbcnet-gpu')
+OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
 # %%
-freq_bands = [(8, 12), (12, 16), (16, 20),
+cnt_files = sorted(list(DATA_DIR.rglob('*.cnt')))
+edf_files = sorted(list(DATA_DIR.rglob('*.edf')))
+file_pairs = [{'cnt': c, 'edf': e} for (c, e) in zip(cnt_files, edf_files)]
+
+# Load data
+mds = []
+for pair in tqdm(file_pairs, 'Load data'):
+    md = MyData(pair['cnt'])
+    md.link_to_edf(pair['edf'])
+    mds.append(md)
+
+groups = np.concatenate([
+    np.zeros((len(md.epochs), )) + i
+    for i, md in enumerate(mds)])
+
+
+# %%
+FREQ_BANDS = [(8, 12), (12, 16), (16, 20),
               (20, 24), (24, 28), (28, 32)]
 
 # %% ---- 2025-09-26 ------------------------
@@ -53,6 +65,10 @@ class DataLoader:
         # Scale into 1 scale
         self.X /= np.max(np.abs(self.X))
         self.y = y
+
+        self.X = torch.tensor(self.X).cuda()
+        self.y = torch.tensor(self.y).cuda()
+
         self.groups = groups
         # Separate groups
         unique_groups = sorted(np.unique(self.groups).tolist())
@@ -84,21 +100,10 @@ class DataLoader:
 
 # %% ---- 2025-09-26 ------------------------
 # Play ground
-# Load data
-mds = []
-for p in tqdm(cnt_files, 'Load data'):
-    md = MyData(p)
-    mds.append(md)
-
-groups = np.concatenate([
-    np.zeros((len(md.epochs), )) + i
-    for i, md in enumerate(mds)])
-
 # Concat epochs
 epochs = mne.concatenate_epochs([md.epochs for md in mds])
 event_ids = list(epochs.event_id.keys())
 epochs.load_data()
-epochs.pick(customized_ch_names)
 print(epochs)
 
 # %%
@@ -111,7 +116,7 @@ y = epochs.events[:, -1]
 # %%
 # Filter and stack X
 new_X = []
-for low_freq, high_freq in tqdm(freq_bands, 'Filtering'):
+for low_freq, high_freq in tqdm(FREQ_BANDS, 'Filtering'):
     # 频带滤波
     X_filtered = X.copy().astype(np.float64, copy=False)
     for i in range(X.shape[0]):
@@ -143,7 +148,7 @@ for test_group in np.unique(groups):
         chunk_size=1000,
         in_channels=shape[1],
         num_classes=num_classes,
-    )
+    ).cuda()
 
     # 定义损失函数和优化器
     criterion = nn.CrossEntropyLoss()  # 多分类任务常用
@@ -166,7 +171,8 @@ for test_group in np.unique(groups):
             # print(_y)
 
             # 前向传播
-            loss = criterion(_y, torch.tensor(y-1))
+            # loss = criterion(_y, torch.tensor(y-1))
+            loss = criterion(_y, y-1)
             # print(f'{loss.item()=}')
 
             # 反向传播
@@ -183,23 +189,24 @@ for test_group in np.unique(groups):
     # Testing loop
     def _test():
         X, y = dl.get_test_data()
+        y_true = y.cpu().numpy()
         with torch.no_grad():
-            _y = model(torch.tensor(X, dtype=torch.float32))
-            predicted = torch.argmax(_y, dim=1).numpy() + 1
-            print(y)
-            print(predicted)
-            accuracy = np.mean(predicted == y)
+            _y = model(torch.tensor(X, dtype=torch.float32)).cpu()
+            y_pred = torch.argmax(_y, dim=1).numpy() + 1
+            accuracy = np.mean(y_pred == y_true)
             logger.info(f'Test Accuracy ({test_group}): {accuracy * 100:.2f}%')
 
         result = {
-            'y_true': y,
-            'y_pred': predicted,
+            'y_true': y_true,
+            'y_pred': y_pred,
             'test_group': test_group
         }
-        save(result, output_directory.joinpath(f'result-{test_group}.dump'))
+        save(result, OUTPUT_DIR.joinpath(f'result-{test_group}.dump'))
 
     _test()
 
 exit(0)
 # %% ---- 2025-09-26 ------------------------
 # Pending
+
+# %%

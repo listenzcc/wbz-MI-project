@@ -22,58 +22,46 @@ import mne
 from mne.stats import permutation_cluster_1samp_test as pcluster_test
 
 from util.easy_import import *
-from read_data import MyData
+from read_data_link import MyData
+
 
 # %%
-raw_directory = Path('./raw')
-cnt_files = sorted(list(raw_directory.rglob('*.cnt')))
-print(f'{cnt_files=}')
+DATA_DIR = Path('./raw/20250929')
+OUTPUT_DIR = Path('./results/erd')
+OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
-output_directory = Path('./results/erd')
-output_directory.mkdir(exist_ok=True, parents=True)
+# %%
+cnt_files = sorted(list(DATA_DIR.rglob('*.cnt')))
+edf_files = sorted(list(DATA_DIR.rglob('*.edf')))
+file_pairs = [{'cnt': c, 'edf': e} for (c, e) in zip(cnt_files, edf_files)]
+
+# Load data
+mds = []
+for pair in tqdm(file_pairs, 'Load data'):
+    md = MyData(pair['cnt'])
+    md.link_to_edf(pair['edf'])
+    mds.append(md)
 
 # %% ---- 2025-09-25 ------------------------
 # Function and class
 
 
-def read_customized_ch_names():
-    raw_split = open('./mqt-channels.txt').read().split()
-    return [e.strip().upper() for e in raw_split if e.strip()]
-
-
 # %% ---- 2025-09-25 ------------------------
 # Play ground
-mds = []
-for p in tqdm(cnt_files, 'Load data'):
-    md = MyData(p)
-    mds.append(md)
-
 raw_epochs = mne.concatenate_epochs([md.epochs for md in mds])
 raw_epochs.load_data()
 
 epochs = raw_epochs.copy().pick(['C3', 'CZ', 'C4'])
 event_ids = list(epochs.event_id.keys())
 
-# %%
-raw_ch_names = raw_epochs.ch_names
-customized_ch_names = read_customized_ch_names()
-joint_ch_names = sorted([e for e in customized_ch_names if e in raw_ch_names])
-na_ch_names = sorted(
-    [e for e in customized_ch_names if e not in joint_ch_names])
-print(f'{joint_ch_names=}')
-print(f'{na_ch_names=}')
-with open(output_directory.parent.joinpath('ch_names.txt'), 'w') as f:
-    f.write('\n'.join(joint_ch_names))
-
 
 # %%
 for evt in event_ids:
     evoked = raw_epochs[evt].average()
-    evoked.pick(joint_ch_names)
     fig = evoked.plot_joint(
         show=False, title=f'{evt=}', times=[0, 0.135, 0.470, 1, 2])
-    fig.savefig(output_directory.parent.joinpath(f'evoked-{evt=}.png'))
-    plt.show()
+    fig.savefig(OUTPUT_DIR.parent.joinpath(f'evoked-{evt=}.png'))
+    # plt.show()
 
 # %%
 
@@ -135,8 +123,8 @@ for evt in event_ids:
             ax.set_yticklabels("")
     fig.colorbar(axes[0].images[-1], cax=axes[-1]).ax.set_yscale("linear")
     fig.suptitle(f"ERDS ({evt})")
-    fig.savefig(output_directory.joinpath(f'ERDS-{evt=}.png'))
-    plt.show()
+    fig.savefig(OUTPUT_DIR.joinpath(f'ERDS-{evt=}.png'))
+    # plt.show()
 
 # %% ---- 2025-09-25 ------------------------
 # Pending
