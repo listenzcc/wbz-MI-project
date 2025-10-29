@@ -25,7 +25,7 @@ from util.io.file import load
 
 
 # %%
-DATA_DIR = Path('./results-neuroscan-device/fbcnet-gpu')
+DATA_DIR = Path('./results/fbcnet-gpu')
 
 # %%
 dump_files = sorted(list(DATA_DIR.rglob('*.dump')))
@@ -54,7 +54,8 @@ y_pred = np.array(y_pred).ravel()
 
 for report in reports:
     print(report['accuracy'])
-print(metrics.classification_report(y_true=y_true, y_pred=y_pred))
+print(metrics.classification_report(y_true=y_true, y_pred=y_pred),
+      file=open(DATA_DIR.joinpath('report.txt'), 'w'))
 
 
 # %% ---- 2025-09-26 ------------------------

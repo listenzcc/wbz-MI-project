@@ -26,7 +26,7 @@ from read_data_link import MyData
 
 
 # %%
-DATA_DIR = Path('./raw/20250929')
+DATA_DIR = Path('./raw/20251029')
 OUTPUT_DIR = Path('./results/erd')
 OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
@@ -51,7 +51,12 @@ for pair in tqdm(file_pairs, 'Load data'):
 raw_epochs = mne.concatenate_epochs([md.epochs for md in mds])
 raw_epochs.load_data()
 
-epochs = raw_epochs.copy().pick(['C3', 'CZ', 'C4'])
+print(raw_epochs)
+print(raw_epochs.ch_names)
+
+# %%
+
+epochs = raw_epochs.copy().pick(['C3', 'C1', 'C2', 'C4'])
 event_ids = list(epochs.event_id.keys())
 
 
@@ -88,8 +93,9 @@ tfr.apply_baseline(baseline, mode="percent")
 for evt in event_ids:
     # select desired epochs for visualization
     tfr_ev = tfr[evt]
+    nc = 4
     fig, axes = plt.subplots(
-        1, 4, figsize=(12, 4), gridspec_kw={"width_ratios": [10, 10, 10, 1]}
+        1, nc+1, figsize=(nc*4, 4), gridspec_kw={"width_ratios": [10]*nc + [1]}
     )
     for ch, ax in enumerate(axes[:-1]):  # for each channel
         # positive clusters

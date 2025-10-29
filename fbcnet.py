@@ -30,7 +30,7 @@ from util.io.file import save
 from read_data_link import MyData
 
 # %%
-DATA_DIR = Path('./raw/20250929')
+DATA_DIR = Path('./raw/20251029')
 OUTPUT_DIR = Path('./results/fbcnet-gpu')
 OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
@@ -145,7 +145,7 @@ for test_group in np.unique(groups):
     # Model
     model = FBCNet(
         num_electrodes=shape[2],
-        chunk_size=1000,
+        chunk_size=600,
         in_channels=shape[1],
         num_classes=num_classes,
     ).cuda()
@@ -158,7 +158,7 @@ for test_group in np.unique(groups):
     print(model, criterion, optimizer)
 
     # Training loop
-    dl = DataLoader(X[:, :, :, :1000], y, groups, test_group=test_group)
+    dl = DataLoader(X[:, :, :, :600], y, groups, test_group=test_group)
     it = iter(dl.yield_train_data(batch_size=64))
 
     for epoch in tqdm(range(5000), desc='Epoch'):

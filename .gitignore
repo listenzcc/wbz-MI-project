@@ -1,6 +1,4 @@
 raw
 __pycache__
 log
-results
-results-neuroscan-device
-results-no-additional-filter
+results*

@@ -58,7 +58,7 @@ def read_edf_file(fpath: Path):
 
     return {
         'sfreq': fs,
-        'ch_names': channel_labels,
+        'ch_names': [e.upper() for e in channel_labels],
         'data': np.array(signals),
         'times': np.array([e*dt for e in range(len(signals[0]))])
     }
@@ -94,10 +94,11 @@ class MyData:
             idx = len(times[times < real_t])
             events.append([idx, 0, marker])
         events = np.array(events)
-        events[:, -1] = self.events[:, -1]
-        ratios = np.diff(events[:, 0]) / np.diff(self.events[:, 0])
+        events[:, -1] = self.events[:len(events), -1]
+        ratios = np.diff(events[:, 0]) / np.diff(self.events[:len(events), 0])
         self.marker_quality = np.mean(
             ratios - edf['sfreq'] / self.raw.info['sfreq'])
+        print(f'{self.marker_quality=}')
 
         # Link two objects
         raw = self.raw.copy()
@@ -108,7 +109,7 @@ class MyData:
 
         # Generate epochs
         self.epochs = mne.Epochs(
-            self.raw, events, self.event_id, **self.setup.epochs)
+            self.edf_raw, events, self.event_id, **self.setup.epochs)
         self.epochs.drop_bad()
         self.epochs.load_data()
         self.epochs.filter(l_freq=0, h_freq=40)

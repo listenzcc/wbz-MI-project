@@ -33,7 +33,7 @@ from util.easy_import import *
 from read_data_link import MyData
 
 # %%
-DATA_DIR = Path('./raw/20250929')
+DATA_DIR = Path('./raw/20251029')
 OUTPUT_DIR = Path('./results/decoding')
 OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
