@@ -25,7 +25,7 @@ from util.io.file import load
 
 
 # %%
-DATA_DIR = Path('./results/fbcnet-gpu')
+DATA_DIR = Path('./results-neuroscan-device/fbcnet-gpu')
 
 # %%
 dump_files = sorted(list(DATA_DIR.rglob('*.dump')))
